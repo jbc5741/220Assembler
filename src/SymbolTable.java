@@ -53,7 +53,7 @@ public class SymbolTable {
      * @return true if able to add, false if illegal name.
      */
     public boolean addEntry(String symbol, int address) {
-        if (!(this.contains(symbol))) {
+        if (!(this.contains(symbol)) && isValidName(symbol)) {
             symbolTable.put(symbol,address);
             return true;
         } else {

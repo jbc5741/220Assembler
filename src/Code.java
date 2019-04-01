@@ -67,7 +67,7 @@ public class Code {
     }
 
     /**
-     * Convertsa  mnemonic String to a String of 3 bits.
+     * Converts a mnemonic String to a String of 3 bits.
      *
      * @param mnemonic
      *          String that represents the mnemonic for a dest code.

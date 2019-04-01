@@ -1,4 +1,9 @@
-//Author info here
+/**
+ * Assembler.java Initializes I/O files and handles errors.
+ *
+ * @author Jesse Cox
+ * @version 1.0
+ */
 //TODO: don't forget to document each method in all classes!
 import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
@@ -48,8 +53,6 @@ public class Assembler {
             System.err.println("Run program again, make sure you have write permissions, etc.");
             System.exit(0);
         }
-
-        // TODO: finish driver as algorithm describes
     }
 
     // TODO: march through the source code without generating any code
@@ -58,7 +61,17 @@ public class Assembler {
     // n = romAddress which you should keep track of as you go through each line
     //HINT: when should rom address increase? For what kind of commands?
     private static void firstPass(String inputFileName, SymbolTable symbolTable) {
-
+        int romAdd = 0;
+        Parser firstParser = new Parser(inputFileName);
+        while (firstParser.hasMoreCommands()) {
+            firstParser.advance();
+            firstParser.parseCommandType();
+            if (firstParser.getCommandType() == 'A' || firstParser.getCommandType() == 'C') {
+                romAdd++;
+            } else if (firstParser.getCommandType() == 'L') {
+                symbolTable.addEntry(firstParser.getSymbol(),(romAdd + 1));
+            }
+        }
     }
 
     // TODO: march again through the source code and process each line:
@@ -74,7 +87,39 @@ public class Assembler {
     // HINT: What should ram address start at? When should it increase?
     // What do you do with L commands and No commands?
     private static void secondPass(String inputFileName, SymbolTable symbolTable, PrintWriter outputFile) {
-
+        int emptyPos = 16;
+        Parser secondParser = new Parser(inputFileName);
+        while (secondParser.hasMoreCommands()) {
+            String toWrite = "";
+            secondParser.advance();
+            secondParser.parseCommandType();
+            switch (secondParser.getCommandType()) {
+                case 'A' :
+                    toWrite += "1";
+                    try {
+                        toWrite.concat("" + Integer.toBinaryString(Integer.parseInt(secondParser.getSymbol())));
+                    } catch (NumberFormatException nfe) {
+                        if (!(symbolTable.contains(secondParser.getSymbol()))) {
+                            symbolTable.addEntry(secondParser.getSymbol(),emptyPos);
+                            emptyPos++;
+                        }
+                        toWrite.concat("" + Integer.toBinaryString(symbolTable.getAddress(secondParser.getSymbol())));
+                    }
+                    break;
+                case 'C' :
+                    Code cCode = new Code();
+                    toWrite += "0";
+                    toWrite.concat(cCode.getComp(secondParser.getComp()));
+                    toWrite.concat(cCode.getDest(secondParser.getDest()));
+                    toWrite.concat(cCode.getJump(secondParser.getJump()));
+                    break;
+                case 'L' :
+                    break;
+                default :
+                    break;
+            }
+            outputFile.print(toWrite);
+        }
     }
 
 
