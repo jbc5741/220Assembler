@@ -22,7 +22,7 @@ D ; JLE		// if RAM[temp] <= 0, go to the end of the loop
 @0		// A = 0
 D = M		// D = RAM[0]
 @2		// A = 2
-M = M + D	// Add one of RAM[0] to RAM[2]
+M = D + M	// Add one of RAM[0] to RAM[2]
 @temp		// A = temp
 M = M - 1	// Subtract 1 from RAM[temp]
 @BEGINWHILE// A = beginWhile

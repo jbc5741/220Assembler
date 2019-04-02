@@ -40,7 +40,7 @@ public class Assembler {
             System.out.println("Please enter assembly file name you would like to assemble.");
             System.out.println("Don't forget the .asm extension: ");
             //inputFileName = keyboard.nextLine();
-            inputFileName = "Fill.asm";
+            inputFileName = "Mult.asm";
             keyboard.close();
         }
 
@@ -129,7 +129,7 @@ public class Assembler {
                     try {
                         int symbolInt = Integer.parseInt(secondParser.getSymbol());
                         String symbolString = Integer.toBinaryString(symbolInt);
-                        aToWrite += symbolString;
+                        aToWrite += String.format("%15s",symbolString).replaceAll(" ","0");
 
                     //  If the symbol isn't a proper number, recognize it as a label or variable.
                     } catch (NumberFormatException nfe) {
