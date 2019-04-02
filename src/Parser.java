@@ -1,3 +1,5 @@
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.Scanner;
 
 /**
@@ -40,7 +42,13 @@ public class Parser {
      */
     public Parser(String inFileName) {
         this.lineNumber = 0;
-        this.inputFile = new Scanner(inFileName);
+        File inFile = new File(inFileName);
+        try {
+            this.inputFile = new Scanner(inFile);
+        } catch (FileNotFoundException fnfe) {
+            System.out.println("Oops! File not found!");
+            System.exit(0);
+        }
     }
 
     /**
@@ -56,10 +64,10 @@ public class Parser {
      * Reads next line from file and parses it into instance variables.
      */
     public void advance() {
-        this.reset();
-        this.lineNumber++;
-        this.rawLine = this.inputFile.nextLine();
-        this.cleanLine();
+        reset();
+        lineNumber++;
+        rawLine = inputFile.nextLine();
+        cleanLine();
     }
 
 
@@ -69,37 +77,41 @@ public class Parser {
      * Removes comments and whitespace.
      */
     public void cleanLine() {
-        int comments = this.rawLine.indexOf("//");
-        this.cleanLine = this.rawLine.substring(0,comments);
-        this.cleanLine = this.rawLine.trim();
+        cleanLine = rawLine;
+        if (rawLine.contains("//")) {
+            int comments = rawLine.indexOf("//");
+            cleanLine = cleanLine.substring(0,comments);
+        }
+        cleanLine = cleanLine.replaceAll("\\s","");
+        cleanLine = cleanLine.trim();
     }
 
     /**
      * Sets the command type according to the first character of the clean line.
      */
     public void parseCommandType() {
-        switch(this.cleanLine.charAt(0)) {
-            case '@' :
-                this.commandType = A_COMMAND;
-                break;
-            case '(' :
-                this.commandType = L_COMMAND;
-                break;
-            default :
-                this.commandType = C_COMMAND;
-                break;
+        if (!(cleanLine.isEmpty())) {
+        }
+        if (cleanLine.isEmpty()) {
+            commandType = NO_COMMAND;
+        } else if (cleanLine.charAt(0) == '@') {
+            commandType = A_COMMAND;
+        } else if (cleanLine.charAt(0) == '(') {
+            commandType = L_COMMAND;
+        } else {
+            commandType = C_COMMAND;
         }
     }
 
     public void parse() {
-        this.parseCommandType();
-        if (this.commandType == A_COMMAND || this.commandType == L_COMMAND) {
-            this.parseSymbol();
+        parseCommandType();
+        if (commandType == A_COMMAND || commandType == L_COMMAND) {
+            parseSymbol();
         }
-        if (this.commandType == C_COMMAND) {
-            this.parseDest();
-            this.parseComp();
-            this.parseJump();
+        if (commandType == C_COMMAND) {
+            parseDest();
+            parseComp();
+            parseJump();
         }
     }
 
@@ -107,12 +119,10 @@ public class Parser {
      * Parses symbol for A- or L- commands. Calls advance() so cleanLine has a value.
      */
     public void parseSymbol() {
-        this.advance();
-        if (this.getCommandType() == 'A') {
-            int aSymbol = Integer.parseInt(this.cleanLine.substring(1),2);
-            this.symbol = ("" + aSymbol);
-        } else if (this.getCommandType() == 'L') {
-            this.symbol = this.cleanLine.substring(1,this.cleanLine.length()-1);
+        if (getCommandType() == 'A') {
+            symbol = cleanLine.substring(1);
+        } else if (getCommandType() == 'L') {
+            symbol = cleanLine.substring(1,cleanLine.length()-1);
         }
     }
 
@@ -120,9 +130,11 @@ public class Parser {
      * Parses line to get dest. Will only be called if a C instruction.
      */
     public void parseDest() {
-        if (this.cleanLine.contains("=")) {
-            int equalsSign = this.cleanLine.indexOf('=');
-            this.destMnemonic = this.cleanLine.substring(0,equalsSign);
+        if (cleanLine.contains("=")) {
+            int equalsSign = cleanLine.indexOf('=');
+            destMnemonic = cleanLine.substring(0,equalsSign);
+        } else {
+            destMnemonic = "null";
         }
     }
 
@@ -130,12 +142,12 @@ public class Parser {
      * Parses line to get comp. Will only be called if a C instruction.
      */
     public void parseComp() {
-        if (this.cleanLine.contains("=")) {
-            int equalsSign = this.cleanLine.indexOf('=');
-            this.compMnemonic = this.cleanLine.substring(equalsSign,this.cleanLine.length());
-        } else if (this.cleanLine.contains(";")) {
-            int semicolon = this.cleanLine.indexOf(';');
-            this.compMnemonic = this.cleanLine.substring(0,semicolon);
+        if (cleanLine.contains("=")) {
+            int equalsSign = cleanLine.indexOf('=');
+            compMnemonic = cleanLine.substring(equalsSign + 1);
+        } else if (cleanLine.contains(";")) {
+            int semicolon = cleanLine.indexOf(';');
+            compMnemonic = cleanLine.substring(0,semicolon);
         }
     }
 
@@ -143,9 +155,11 @@ public class Parser {
      * Parses line to get jump. Will only be called if a C instruction.
      */
     public void parseJump() {
-        if (this.cleanLine.contains(";")) {
-            int semicolon = this.cleanLine.indexOf(';');
-            this.jumpMnemonic = this.cleanLine.substring(semicolon);
+        if (cleanLine.contains(";")) {
+            int semicolon = cleanLine.indexOf(';');
+            jumpMnemonic = cleanLine.substring(semicolon + 1);
+        } else {
+            jumpMnemonic = "null";
         }
     }
 
@@ -153,13 +167,13 @@ public class Parser {
      * Resets all instance variables.
      */
     public void reset() {
-        this.rawLine = "";
-        this.cleanLine = "";
-        this.commandType = '\u0000';
-        this.symbol = "";
-        this.destMnemonic = "";
-        this.compMnemonic = "";
-        this.jumpMnemonic = "";
+        rawLine = "";
+        cleanLine = "";
+        commandType = '\u0000';
+        symbol = "";
+        destMnemonic = "";
+        compMnemonic = "";
+        jumpMnemonic = "";
     }
 
 

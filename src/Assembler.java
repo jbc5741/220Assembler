@@ -39,8 +39,8 @@ public class Assembler {
 
             System.out.println("Please enter assembly file name you would like to assemble.");
             System.out.println("Don't forget the .asm extension: ");
-            inputFileName = keyboard.nextLine();
-
+            //inputFileName = keyboard.nextLine();
+            inputFileName = "Fill.asm";
             keyboard.close();
         }
 
@@ -53,75 +53,119 @@ public class Assembler {
             System.err.println("Run program again, make sure you have write permissions, etc.");
             System.exit(0);
         }
+        SymbolTable mySymbolTable = new SymbolTable();
+        firstPass(inputFileName,mySymbolTable);
+        secondPass(inputFileName,mySymbolTable,outputFile);
+        outputFile.close();
     }
 
-    // TODO: march through the source code without generating any code
-    //for each label declaration (LABEL) that appears in the source code,
-    // add the pair <LABEL, n> to the symbol table
-    // n = romAddress which you should keep track of as you go through each line
-    //HINT: when should rom address increase? For what kind of commands?
+    /**
+     * March through the source code without generating code. Each time an L Command is reached,
+     * add it to the symbol table with an appropriate ROM address, which is incremented every
+     * time an A Command or C Command is recognized.
+     *
+     * @param inputFileName
+     *          String representing the user defined input file.
+     * @param symbolTable
+     *          Local symbolTable.
+     */
     private static void firstPass(String inputFileName, SymbolTable symbolTable) {
+        // ROM Address tracker.
         int romAdd = 0;
+
+        // New custom Parser
         Parser firstParser = new Parser(inputFileName);
+
+        // While the parser still has commands to read:
+        //      Advance, parse, and look for L_COMMAND symbols to add to symbolTable.
+        //      Otherwise, advance the ROM tracker.
         while (firstParser.hasMoreCommands()) {
             firstParser.advance();
-            firstParser.parseCommandType();
+            firstParser.parse();
             if (firstParser.getCommandType() == 'A' || firstParser.getCommandType() == 'C') {
                 romAdd++;
             } else if (firstParser.getCommandType() == 'L') {
+                //System.out.println("Adding " + firstParser.getSymbol() + " to table");
                 symbolTable.addEntry(firstParser.getSymbol(),(romAdd + 1));
             }
         }
     }
 
-    // TODO: march again through the source code and process each line:
-    // if the line is a c-instruction, simple (translate)
-    // if the line is @xxx where xxx is a number, simple (translate)
-    // if the line is @xxx and xxx is a symbol, look it up in the symbol
-    //	table and proceed as follows:
-    // If the symbol is found, replace it with its numeric value and
-    //	and complete the commands translation
-    // If the symbol is not found, then it must represent a new variable:
-    // add the pair <xxx, n> to the symbol table, where n is the next
-    //	available RAM address, and complete the commands translation
-    // HINT: What should ram address start at? When should it increase?
-    // What do you do with L commands and No commands?
+    /**
+     * Move through the source code again and add lines of binary code to the output file
+     * according to the following conditions:
+     * - A Command - If the symbol is a proper integer, convert it to a binary string and write.
+     *                  else, recognize as variable or label and treat accordingly.
+     * - C Command - Use a Code object to lookup the correct binary code for Comp, Dest and Jump,
+     *                  and add them to the toWrite String.
+     *
+     * @param inputFileName
+     *          String representing the user defined input file.
+     * @param symbolTable
+     *          Local symbolTable.
+     * @param outputFile
+     *          PrintWriter that will write to the .HACK file.
+     */
     private static void secondPass(String inputFileName, SymbolTable symbolTable, PrintWriter outputFile) {
+        //  Empty RAM tracker
         int emptyPos = 16;
+
+        //  Custom Parser for second pass.
         Parser secondParser = new Parser(inputFileName);
+
+        //  While the parser still has commands to parse:
+        //      Create a new String to write to the .HACK file.
+        //      Advance and parse.
+        //      Depending on the command type, append the appropriate string to the toWrite String
+        //      by using a Code object as a lookup table.
         while (secondParser.hasMoreCommands()) {
-            String toWrite = "";
             secondParser.advance();
-            secondParser.parseCommandType();
+            secondParser.parse();
             switch (secondParser.getCommandType()) {
+                //  A COMMAND
                 case 'A' :
-                    toWrite += "1";
+                    String aToWrite = "";
+                    aToWrite += "0";
                     try {
-                        toWrite.concat("" + Integer.toBinaryString(Integer.parseInt(secondParser.getSymbol())));
+                        int symbolInt = Integer.parseInt(secondParser.getSymbol());
+                        String symbolString = Integer.toBinaryString(symbolInt);
+                        aToWrite += symbolString;
+
+                    //  If the symbol isn't a proper number, recognize it as a label or variable.
                     } catch (NumberFormatException nfe) {
                         if (!(symbolTable.contains(secondParser.getSymbol()))) {
                             symbolTable.addEntry(secondParser.getSymbol(),emptyPos);
-                            emptyPos++;
+                            emptyPos++;             //  Track new empty RAM position.
                         }
-                        toWrite.concat("" + Integer.toBinaryString(symbolTable.getAddress(secondParser.getSymbol())));
+                        int symbolInt = symbolTable.getAddress((secondParser.getSymbol()));
+                        String symbolString = Integer.toBinaryString(symbolInt);
+                        aToWrite += String.format("%15s",symbolString).replaceAll(" ","0");
                     }
+                    aToWrite += "\n";
+                    System.out.print(aToWrite);
+                    outputFile.print(aToWrite);
                     break;
+
+                //  C COMMAND
                 case 'C' :
+                    String cToWrite = "";
                     Code cCode = new Code();
-                    toWrite += "0";
-                    toWrite.concat(cCode.getComp(secondParser.getComp()));
-                    toWrite.concat(cCode.getDest(secondParser.getDest()));
-                    toWrite.concat(cCode.getJump(secondParser.getJump()));
+                    cToWrite += "111";
+                    cToWrite += cCode.getComp(secondParser.getComp());
+                    cToWrite += cCode.getDest(secondParser.getDest());
+                    cToWrite += cCode.getJump(secondParser.getJump());
+                    cToWrite += "\n";
+                    System.out.print(cToWrite);
+                    outputFile.print(cToWrite);
                     break;
+
+                //  L COMMAND
                 case 'L' :
+                    symbolTable.addEntry(secondParser.getSymbol(),secondParser.getLineNumber() + 1);
                     break;
                 default :
                     break;
             }
-            outputFile.print(toWrite);
         }
     }
-
-
-
 }
