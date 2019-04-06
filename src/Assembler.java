@@ -39,8 +39,7 @@ public class Assembler {
 
             System.out.println("Please enter assembly file name you would like to assemble.");
             System.out.println("Don't forget the .asm extension: ");
-            //inputFileName = keyboard.nextLine();
-            inputFileName = "Mult.asm";
+            inputFileName = keyboard.nextLine();
             keyboard.close();
         }
 

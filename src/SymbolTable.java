@@ -11,9 +11,10 @@ import java.util.HashMap;
 public class SymbolTable {
 
     // DEFAULT VALUES
-    private static final String INITIAL_VALID_CHARS = "";
+    private static final String INITIAL_VALID_CHARS =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_$";
     private static final String ALL_VALID_CHARS =
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_";
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_$0123456789";
 
     // SINGLE INSTANCE VARIABLE
     private HashMap<String, Integer> symbolTable;
@@ -92,9 +93,12 @@ public class SymbolTable {
      */
     public boolean isValidName(String symbol) {
         boolean toReturn = true;
-        char[] charray = symbol.toCharArray();
+        char[] charray = symbol.substring(1).toCharArray();
+        if (!(INITIAL_VALID_CHARS.contains("" + symbol.charAt(0)))) {
+            toReturn = false;
+        }
         for (char c : charray) {
-            if (!(ALL_VALID_CHARS.contains(""+c))) {
+            if (!(ALL_VALID_CHARS.contains("" + c))) {
                 toReturn = false;
             }
         }
